@@ -1,0 +1,18 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local database sandbox
+db.sqlite3
+db.sqlite3-journal
+
+# Virtual Environment isolation layers
+venv/
+ENV/
+env/
+
+# IDE files
+.vscode/
+.idea/
+.DS_Store

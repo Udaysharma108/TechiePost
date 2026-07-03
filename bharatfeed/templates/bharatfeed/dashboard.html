@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TechiePost // Developer Feed Engine</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+      body {
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-zinc-950 text-zinc-50 min-h-screen selection:bg-emerald-500 selection:text-zinc-950"
+  >
+    <header
+      class="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur sticky top-0 z-50"
+    >
+      <div
+        class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between"
+      >
+        <div class="flex items-center gap-3">
+          <span
+            class="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"
+          ></span>
+          <h1 class="text-lg font-bold tracking-tight text-emerald-400">
+            TechiePost_Core
+          </h1>
+        </div>
+        <div
+          class="text-xs text-zinc-400 border border-zinc-800 rounded px-2 py-1 bg-zinc-950"
+        >
+          Data Pipeline: Active
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <section class="bg-zinc-900/30 border border-zinc-800 rounded-xl p-6">
+          <div
+            class="flex items-center justify-between border-b border-zinc-800 pb-4 mb-6"
+          >
+            <h2 class="text-md font-semibold text-zinc-200 tracking-wide">
+              // Global Tech Frontiers
+            </h2>
+            <span
+              id="global-count"
+              class="text-xs bg-zinc-800 text-zinc-400 px-2.5 py-0.5 rounded-full"
+              >0 items</span
+            >
+          </div>
+          <div id="global-feed-container" class="space-y-4"></div>
+        </section>
+
+        <section class="bg-zinc-900/30 border border-zinc-800 rounded-xl p-6">
+          <div
+            class="flex items-center justify-between border-b border-zinc-800 pb-4 mb-6"
+          >
+            <h2 class="text-md font-semibold text-emerald-400 tracking-wide">
+              // BharatFeed
+            </h2>
+            <span
+              id="bharat-count"
+              class="text-xs bg-emerald-950/50 text-emerald-400 border border-emerald-900/50 px-2.5 py-0.5 rounded-full"
+              >0 items</span
+            >
+          </div>
+          <div id="bharat-feed-container" class="space-y-4"></div>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      async function loadTechFeeds() {
+        const globalContainer = document.getElementById(
+          "global-feed-container",
+        );
+        const bharatContainer = document.getElementById(
+          "bharat-feed-container",
+        );
+
+        try {
+          const response = await fetch("/api/feed/");
+          const data = await response.json();
+
+          if (data.status === "success") {
+            // Update layout metrics markers
+            document.getElementById("global-count").innerText =
+              `${data.metrics.total_global} items`;
+            document.getElementById("bharat-count").innerText =
+              `${data.metrics.total_bharat} items`;
+
+            // 1. Render the Global Array Payloads
+            globalContainer.innerHTML = data.feeds.global_tech_frontiers
+              .map(
+                (article) => `
+                        <div class="p-4 rounded-lg bg-zinc-900 border border-zinc-800/80 hover:border-zinc-700 transition-colors group">
+                            <a href="${article.url}" target="_blank" class="text-sm font-medium text-zinc-100 group-hover:text-emerald-400 block mb-1">
+                                ${article.title}
+                            </a>
+                            <p class="text-xs text-zinc-400 line-clamp-2 leading-relaxed mb-2">${article.summary}</p>
+                        </div>
+                    `,
+              )
+              .join("");
+
+            // 2. Render the BharatFeed Local Array Payloads
+            if (data.feeds.bharat_feed.length === 0) {
+              bharatContainer.innerHTML = `
+                            <div class="text-center py-12 border border-dashed border-zinc-800 rounded-lg text-zinc-500 text-xs">
+                                No regional keyword tags detected in this execution cycle.<br>
+                                Waiting for incoming pipeline streams...
+                            </div>
+                        `;
+            } else {
+              bharatContainer.innerHTML = data.feeds.bharat_feed
+                .map(
+                  (article) => `
+                            <div class="p-4 rounded-lg bg-zinc-900 border border-emerald-950/30 hover:border-emerald-800/50 transition-colors group">
+                                <a href="${article.url}" target="_blank" class="text-sm font-medium text-zinc-100 group-hover:text-emerald-400 block mb-1">
+                                    ${article.title}
+                                </a>
+                                <p class="text-xs text-zinc-400 line-clamp-2 leading-relaxed mb-2">${article.summary}</p>
+                            </div>
+                        `,
+                )
+                .join("");
+            }
+          }
+        } catch (err) {
+          console.error("Dashboard engine failed to stream API metrics:", err);
+        }
+      }
+
+      // Initialize runtime sequence on load
+      window.addEventListener("DOMContentLoaded", loadTechFeeds);
+    </script>
+  </body>
+</html>
