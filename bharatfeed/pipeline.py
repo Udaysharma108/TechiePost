@@ -83,23 +83,30 @@ class IngestionPipeline:
     def sync_regional_devto(self):
         """
         Harvests regional tech ecosystem updates using advanced contextual token 
-        validation to filter out explicit spam while preserving real tech innovations.
+        validation to filter out explicit spam, adult content, and lifestyle noise.
         """
         search_queries = [
             "india", "bharat", "bengaluru", "bangalore", "pune", "mumbai", 
             "delhi", "hyderabad", "tcs", "infosys", "wipro", "isro", "upi"
         ]
         
-        # Exact phrases used by SEO spammers
+        # Target exact high-noise phrases used by SEO spammers
         EXPLICIT_SPAM_PHRASES = [
             'escort service', 'callgirl in', 'call girl', 'independent escorts',
-            'adult dating', 'male fertility doctor', 'best radiologist'
+            'adult dating', 'male fertility doctor', 'best radiologist', 
+            'hot webseries', 'watch online', 'adult links', '18+ link'
         ]
+        
+        # Structural tokens targeting pornographic, explicit, or highly unprofessional noise
+        ADULT_SPAM_MATRIX = {
+            'porn', 'pornsite', 'sextoy', 'sextoys', 'xrated', 'xxx', 'erotic', 
+            'sensual', 'webseries', 'episodes', 'streaming'
+        }
         
         count = 0
         ingested_urls = set()
 
-        logger.info("[Pipeline] Running Contextual Filtering for BharatFeed...")
+        logger.info("[Pipeline] Running Advanced Integrity Filtering for BharatFeed...")
 
         for query in search_queries:
             if count >= 10:  
@@ -124,22 +131,26 @@ class IngestionPipeline:
                 # 1. Immediate Spam Phrase Gate
                 searchable_text = f"{title} {body} {' '.join(tags)}".lower()
                 if any(phrase in searchable_text for phrase in EXPLICIT_SPAM_PHRASES):
-                    continue  # Safely drops the spam without breaking general words
+                    continue  
 
-                # 2. Tokenize for tech verification
+                # 2. Tokenize text content down to lowercase words
                 words_in_article = set(re.findall(r'[a-z0-9]+', searchable_text))
+
+                # 3. Direct Adult Content & Explicit Term Filter Gate
+                if not words_in_article.isdisjoint(ADULT_SPAM_MATRIX):
+                    continue  # Instantly drops any post infected with explicit keywords
 
                 # Gate A: Must contain a verified regional tracking identifier
                 has_regional_node = not words_in_article.isdisjoint(BHARAT_TECH_MATRIX)
                 
                 # Gate B: Confirm it belongs in a tech context (tags or titles)
-                tech_tags = {'webdev', 'javascript', 'python', 'react', 'node', 'devops', 'ai', 'ml', 'database', 'coding', 'software', 'engineering'}
+                tech_tags = {'webdev', 'javascript', 'python', 'react', 'node', 'devops', 'ai', 'ml', 'database', 'coding', 'software', 'engineering', 'opensource'}
                 has_tech_tag = not set(tags).isdisjoint(tech_tags)
-                is_tech_title = any(word in title.lower() for word in ['built', 'app', 'tool', 'system', 'code', 'software', 'engineering', 'tech', 'hiring', 'developer'])
+                is_tech_title = any(word in title.lower() for word in ['built', 'app', 'tool', 'system', 'code', 'software', 'engineering', 'tech', 'hiring', 'developer', 'open source'])
 
                 if has_regional_node and (has_tech_tag or is_tech_title):
                     
-                    # Generate a clean, professional summary paragraph
+                    # Generate a clean, humanized, high-density summary paragraph
                     rich_summary = (
                         f"This ecosystem insight highlights technical engineering progress concerning '{title}'. "
                         f"Documented by industry contributor '{author_name}', the analysis explores key software architecture implementations "
@@ -148,7 +159,7 @@ class IngestionPipeline:
                         f"below to review the complete implementation."
                     )
                     
-                    # Safely replace sensitive terms with secure placeholders if they appear
+                    # Handle sensitive systemic key identifiers gracefully via generic descriptive placeholders
                     if "aadhaar" in searchable_text:
                         rich_summary = rich_summary.replace("Aadhaar", "[Identity System Verification Active]")
 
